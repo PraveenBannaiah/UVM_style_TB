@@ -7,7 +7,6 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
   virtual wb_if #(2,8) wb_bus; 
   T wb_trans;
   wb_configuration configuration;
-  
 
   function void set_configuration(wb_configuration cfg);
     configuration = cfg;
@@ -20,6 +19,9 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		begin
 			wb_bus.master_read(trans.slave_address,trans.read_data);
 			//$display("Single register(%x) byte read: %x",trans.slave_address,trans.read_data);
+			//Reading the FSM
+			wb_bus.disable_test = 1'b1;
+			wb_bus.master_read(8'h03,trans.read_data);
 		end
 		
 		else
@@ -28,6 +30,9 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 				//$display("\n Debug 1");
 				//if(trans.slave_address == 8'h02)
 					//wb_bus.wait_for_interrupt();
+				//Reading the FSM
+				wb_bus.disable_test = 1'b1;
+				wb_bus.master_read(8'h03,trans.read_data);
 			end
 	end
     else begin
@@ -50,6 +55,7 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);
+
 		
 		wb_bus.master_write(8'h02,8'bxxxxx100);          //// Write byte “xxxxx100” to the CMDR. This is start command.
 		
@@ -57,6 +63,10 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);             //We are reading to pull the irq to zero, i think
 		 
+		//Reading the FSM
+		wb_bus.disable_test = 1'b0;
+		wb_bus.master_read(8'h03,tr.read_data);
+
 		tr.slave_address = (tr.slave_address << 1) + 1'b1;    //address manipulation
 		wb_bus.master_write(8'h01,tr.slave_address);              //This is the slave address 0x44 shifted 1 bit to the left + rightmost bit is '1' which means reading.
 		wb_bus.master_write(8'h02,8'bxxxxx001);        //Write byte “xxxxx001” to the CMDR. This is Write command.     
@@ -65,6 +75,11 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);             //Wait for interrupt or until DON bit of CMDR reads '1'
 		 
+
+		//Reading the FSM
+		wb_bus.master_read(8'h03,tr.read_data);
+
+
 		wb_bus.master_write(8'h02,8'bxxxxx011);           //Write byte “xxxxx011” to the CMDR. This is Read With Nak command.
 		
 		//$display("\n Read debug 3");
@@ -77,6 +92,10 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);             //Wait for interrupt or until DON bit of CMDR reads '1'
 		
+		//Reading the FSM
+		wb_bus.disable_test = 1'b1;
+		wb_bus.master_read(8'h03,tr.read_data);
+
 	endtask
 	
 	task write(wb_transaction tr);
@@ -88,6 +107,10 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);             //Wait for interrupt or until DON bit of CMDR reads '1'
 		
+		//Reading the FSM
+		wb_bus.disable_test = 1'b0;
+		wb_bus.master_read(8'h03,tr.read_data);
+
 
 		wb_bus.master_write(8'h02,8'bxxxxx100);          //// Write byte “xxxxx100” to the CMDR. This is start command.
 		
@@ -107,13 +130,18 @@ class wb_driver extends ncsu_component#(.T(wb_transaction));
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);             //Wait for interrupt or until DON bit of CMDR reads '1'  //WE need to read to get the irq to go down again
 		
+		//Reading the FSM
+		wb_bus.master_read(8'h03,tr.read_data);
 
 		wb_bus.master_write(8'h02,8'bxxxxx101);        //Write byte “xxxxx101” to the CMDR. This is Stop command.
 		
 		wb_bus.wait_for_interrupt();
 		wb_bus.master_read(8'h02,tr.read_data);             //Wait for interrupt or until DON bit of CMDR reads '1'
 		
-		
+		//Reading the FSM
+		wb_bus.disable_test = 1'b1;
+		wb_bus.master_read(8'h03,tr.read_data);
+
 	endtask
 
 endclass

@@ -72,12 +72,24 @@ interface wb_if       #(
 
 endtask        
 
-// ****************************************************************************              
+// **************************************************************************** 
+bit [7:0] read_FSM;
+  bit read_fsm_flag = 1'b0;
+bit disable_test = 1'b0;
+
+property bus_taken_test;
+@(posedge read_fsm_flag) disable iff(disable_test)
+(read_FSM[7:4] != 4'b0);
+endproperty
+
+// property(bus_taken_test);
+
+
 task master_read(
                  input bit [ADDR_WIDTH-1:0]  addr,
                  output bit [DATA_WIDTH-1:0] data
                  );                                                  
-
+         read_fsm_flag = 1'b0;
         @(posedge clk_i);
         adr_o <= addr;
         dat_o <= 'bx;
@@ -92,6 +104,10 @@ task master_read(
         dat_o <= 'bx;
         we_o <= 1'b0;
         data = dat_i;
+        if(addr == 8'h03) begin
+            read_FSM = dat_i;
+            read_fsm_flag = 1'b1;
+        end
 
 endtask        
 
