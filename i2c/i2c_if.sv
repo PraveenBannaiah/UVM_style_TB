@@ -4,10 +4,11 @@ interface i2c_if #(int I2C_ADDR_WIDTH = 7,int I2C_DATA_WIDTH = 8) ( input SCL, i
                      //Where should we declare this
 
 	property valid_sda_on_scl_posedge;
-		@(posedge SCL) 	(!$isunknown(SDA));                                
+		@(posedge SCL) (!$isunknown(SDA));                                
 	endproperty 
 
 	assert property(valid_sda_on_scl_posedge);
+	
 	
 
 	//In top.sv we will have an initial block, so its a intial block inside another initial?!
