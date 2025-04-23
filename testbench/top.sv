@@ -59,6 +59,7 @@ Command_after_command_test cmd_cmd_test;
 Invalid_bus_range_test bus_range_test;
 test_random random_test;
 FSM_reset_test fsm_reset_test;
+csr_reset_test csr_test;
 // ****************************************************************************
 
 
@@ -79,6 +80,13 @@ property scl_sda_inactive_during_reset;
   disable iff (!rst)
    ($isunknown(scl) && $isunknown(sda));
 endproperty
+
+property irq_lenght;
+  @(posedge clk) disable iff (rst)
+    irq |=> ##[1:10] !irq;
+endproperty
+
+assert property(irq_lenght);
 
 initial begin: rst_gen
  assert property(scl_sda_inactive_during_reset);
@@ -165,24 +173,41 @@ end
 
 initial begin:All_test
 
+  string test_name;
   #150;
+  if (!$value$plusargs("GEN_TRANS_TYPE=%s", test_name)) begin
+    $fatal("No TESTNAME provided via +TESTNAME=your_test");
+  end
+ 
+  if(test_name == "csr_test") begin
+  	csr_test = new("csr_test");  
+	csr_test.i2c_bus = i2c_bus;
+	csr_test.wb_bus = wb_bus;
+	csr_test.make_and_load();
+	csr_test.build();
 
+	csr_test.run();
+  end
   
-  core_test = new("iicmb_core_test");  //Always run this test first as it will set the enable bit in CSR register
+  if(test_name == "iicmb_core_test") begin
+    core_test = new("iicmb_core_test");  //Always run this test first as it will set the enable bit in CSR register
 	core_test.i2c_bus = i2c_bus;
 	core_test.wb_bus = wb_bus;
-	core_test.make_and_load();
+    core_test.make_and_load();
 	core_test.build();
 
 	core_test.run();
+  end
 
-  fsm_reset_test = new("fsm_rest_test"); 
+ if(test_name == "fsm_reset_test") begin
+    fsm_reset_test = new("fsm_rest_test"); 
 	fsm_reset_test.i2c_bus = i2c_bus;
 	fsm_reset_test.wb_bus = wb_bus;
 	fsm_reset_test.make_and_load();
 	fsm_reset_test.build();
 
 	fsm_reset_test.run();
+ end
 
   //cmd_cmd_test = new("command_after_command_test");
 	//cmd_cmd_test.i2c_bus = i2c_bus;
@@ -192,17 +217,19 @@ initial begin:All_test
 
 	//cmd_cmd_test.run();
 
-  /*
-  bus_range_test = new("iicmb_core_test"); 
+  
+  if(test_name == "bus_range_test") begin
+    bus_range_test = new("bus_range_test"); 
 	bus_range_test.i2c_bus = i2c_bus;
 	bus_range_test.wb_bus = wb_bus;
 	bus_range_test.make_and_load();
 	bus_range_test.build();
 
 	bus_range_test.run();
+  end
   
 
-
+ if(test_name == "FSM_test") begin
 	FSM_test = new("FSM_Test");
 	FSM_test.i2c_bus = i2c_bus;
 	FSM_test.wb_bus = wb_bus;
@@ -210,7 +237,9 @@ initial begin:All_test
 	FSM_test.build();
 
 	FSM_test.run();
+ end
 
+ if(test_name == "I2C_sda_check") begin
   i2c_sda_test = new("I2C_sda_check");
 	i2c_sda_test.i2c_bus = i2c_bus;
 	i2c_sda_test.wb_bus = wb_bus;
@@ -218,86 +247,83 @@ initial begin:All_test
 	i2c_sda_test.build();
 
 	i2c_sda_test.run();
+ end
 
-  zero_base = new("I2C_sda_check");
+ if(test_name == "test_base") begin
+    zero_base = new("I2C_sda_check");
 	zero_base.i2c_bus = i2c_bus;
 	zero_base.wb_bus = wb_bus;
 	zero_base.make_and_load();
 	zero_base.build();
 
 	zero_base.run();
+ end
 
-  dpr_test = new("dpr_test");
+ if(test_name == "dpr_test") begin
+    dpr_test = new("dpr_test");
 	dpr_test.i2c_bus = i2c_bus;
 	dpr_test.wb_bus = wb_bus;
 	dpr_test.make_and_load();
 	dpr_test.build();
 
 	dpr_test.run();
+ end
 
-
-  cmdr_status_test = new("cmdr_status_test");
+ if(test_name == "cmdr_status_test") begin
+    cmdr_status_test = new("cmdr_status_test");
 	cmdr_status_test.i2c_bus = i2c_bus;
 	cmdr_status_test.wb_bus = wb_bus;
 	cmdr_status_test.make_and_load();
 	cmdr_status_test.build();
 
 	cmdr_status_test.run();
+ end
 
-
-  cmdr_r_test = new("cmdr_r_test");
+ if(test_name == "cmdr_reset_test") begin
+    cmdr_r_test = new("cmdr_r_test");
 	cmdr_r_test.i2c_bus = i2c_bus;
 	cmdr_r_test.wb_bus = wb_bus;
 	cmdr_r_test.make_and_load();
 	cmdr_r_test.build();
 
 	cmdr_r_test.run();
+ end
  
-
-  inv_add_test = new("inv_add_test");
+ if(test_name == "inv_add_test") begin
+    inv_add_test = new("inv_add_test");
 	inv_add_test.i2c_bus = i2c_bus;
 	inv_add_test.wb_bus = wb_bus;
 	inv_add_test.make_and_load();
 	inv_add_test.build();
 
 	inv_add_test.run();
+ end
 
 
-
-  random_test = new("random_test"); 
+ if(test_name == "test_random") begin
+    random_test = new("random_test"); 
 	random_test.i2c_bus = i2c_bus;
 	random_test.wb_bus = wb_bus;
 	random_test.make_and_load();
 	random_test.build();
-
 	random_test.run();
+ end
 
-  */
 
+  if(test_name == "project1") begin
+    Test = new("Test");
+	Test.i2c_bus = i2c_bus;
+	Test.wb_bus = wb_bus;
+	Test.make_and_load();
+	Test.build();
 
-  //Test = new("Test");
-	//Test.i2c_bus = i2c_bus;
-	//Test.wb_bus = wb_bus;
-	//Test.make_and_load();
-	//Test.build();
-
-	//Test.run();
-  
+	Test.run();
+  end
 	
 	$finish;
 	
 end 
 	
-	
-property i2c_clock_check;
-	@(posedge clk)
-  disable iff (rst)
-  $rose(scl) |-> ##[1:10] $fell(scl);
-	endproperty
-	
-property bus_taken_test;
-	@(posedge clk)	1'b1;                                 //Always true
-	endproperty 
 
 	
 //initial begin
@@ -313,6 +339,7 @@ property bus_taken_test;
 	//assert property(bus_taken_test);
 //end
 
+/*
 logic[7:0] temp_read_data_sig;
 property csr_reset_test;    //property can not be defined inside a procedural block
 		@(posedge clk) 
@@ -326,5 +353,6 @@ initial begin:CSR_TEST
     //assert property(csr_reset_test);
   end
 end
+*/
 
 endmodule
